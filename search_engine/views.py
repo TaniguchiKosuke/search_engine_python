@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from django.views.generic.list import ListView
+from search_engine.models import Article
 
-# Create your views here.
 
-def home(request):
-    return render(request, 'home.html')
+class SearchView(ListView):
+    template_name = 'search.html'
+    queryset = Article
