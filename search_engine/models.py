@@ -13,9 +13,10 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class Article(TimeStampedModel):
-    title = models.TextField()
-    url = models.URLField(max_length=1024)
+class Index(TimeStampedModel):
+    keyword = models.TextField()
+    # url = models.URLField(max_length=1024)
+    url = models.CharField(max_length=2048)
 
     def __str__(self):
         return f'{self.title}: {self.url}'

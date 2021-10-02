@@ -2,5 +2,19 @@
 
 
 {% block content %}
-<h1>hello</h1>
+<h1>Search Engine</h1>
+<form class="row g-3">
+  <div class="col-12">
+    <input type="text" class="form-control" id="inputSearch" placeholder="Search" value="{{ request.GET.query }}" name="query">
+  </div>
+
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Search</button>
+  </div>
+</form>
+{% for page in object_list %}
+  <p>
+    <a href="{{ page.url }}">{{ page.title }}</a>
+  </p>
+{% endfor %}
 {% endblock content %}
