@@ -30,23 +30,26 @@ def add_to_index(index, keyword, url):
             if not url in entry['url']:
                 entry['url'].append(url)
             return
-    url = [url]
-    Index.objects.create(
-        keyword = keyword,
-        url =url
-    )
+    if keyword:
+        Index.objects.create(
+            keyword = keyword,
+            url =url
+        )
 
 
 def add_page_to_index(index, url, html):
     body_soup = BeautifulSoup(html, "html.parser").find('body')
     for child_tag in body_soup.findChildren():
+        #直下の処理でscritpタグを処理から外す
         if child_tag.name == 'script':
             continue
-        child_text = child_tag.text
-        for line in child_text.split('\n'):
-            line = line.rstrip().lstrip()
-            for keyword in split_to_word(line):
-                add_to_index(index, keyword, url)
+        #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
+        if child_tag.name == 'h1' or child_tag.name == 'h2' or child_tag.name == 'h3':
+            child_text = child_tag.text
+            for line in child_text.split('\n'):
+                line = line.rstrip().lstrip()
+                for keyword in split_to_word(line):
+                    add_to_index(index, keyword, url)
 
 
 def extract_page_url_links(html):
@@ -54,20 +57,26 @@ def extract_page_url_links(html):
     return soup.find_all('a')
 
 
-def crawler(seed,max_depth):    
+def crawler(seed, max_depth):    
     to_crawl = {seed}
     crawled = []
     next_depth = []
     index = []
     depth = 0
-    while to_crawl and depth <= max_depth:
+    while to_crawl and (depth <= max_depth):
         page = to_crawl.pop()
         if page not in crawled:
             content = get_page(page)
             add_page_to_index(index, page, content)
-            to_crawl.union(next_depth, extract_page_url_links(get_page(page)))
+            # to_crawl.union(next_depth, extract_page_url_links(get_page(page)))
+            new_url_links = extract_page_url_links(get_page(page))
+            for new_url_link in new_url_links:
+                if new_url_link not in to_crawl:
+                    to_crawl.add(new_url_link)
             crawled.append(page)
         if not to_crawl:
             to_crawl, next_depth = next_depth, []
             depth = depth + 1
+    print('to_crawl======================================')
+    print(to_crawl)
     return crawled

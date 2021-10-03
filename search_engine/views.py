@@ -10,10 +10,11 @@ class SearchView(ListView):
     queryset = Index
 
     def get_queryset(self):
-        seed = 'http://makehackpick.blogspot.com/2016/08/beautifulsoup.html'
-        # crawler(seed, 2)
+        seed = 'https://note.nkmk.me/python-set/'
+        crawler(seed, 2)
         query = self.request.GET.get('query')
         if query:
             queryset = Index.objects.filter(keyword=query)[:10]
-        queryset = Index.objects.all()[:50]
+        else:
+            queryset = Index.objects.all()[:50]
         return queryset
