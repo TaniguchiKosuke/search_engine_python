@@ -11,11 +11,12 @@ import time
 def split_to_word(text):
     """
     MeCabにより、日本語を解析
+    格助詞や助動詞などの特に意味のない日本語
+    もキーワードとして追加されるのでそこの除外処理が必要かも
     """
     words = []
-    # m = MeCab.Tagger("-Ochasen")
     m = MeCab.Tagger(ipadic.MECAB_ARGS)
-    #この処理をしないとエラーが出る
+    #下記の処理をしないとエラーが出る
     text = str(text).lower()
     node = m.parseToNode(text)
     while node:
@@ -34,27 +35,28 @@ def get_page(page_url):
         return r.content
 
 
-def add_to_index(index, keyword, url):
+def add_to_index(keyword, url):
     """
     キーワードとurlをDBに追加
     """
-    for entry in index:
-        if entry['keyword'] == keyword:
-            if not url in entry['url']:
-                entry['url'].append(url)
-            return
-    if keyword:
+    print('url===========================')
+    print(url)
+    index = Index.objects.filter(keyword=keyword)
+    if index:
+        url = index.filter(url__icontains=url)
+        if not url:
+            pass
+    else:
         Index.objects.create(
             keyword = keyword,
             url =url
         )
 
 
-def add_page_to_index(index, url, html):
+def add_page_to_index(url, html):
     """
     取得したページをインデックスに追加
     """
-    print(type(index))
     print(type(url))
     print(type(html))
     body_soup = BeautifulSoup(html, "html.parser").find('body')
@@ -68,15 +70,14 @@ def add_page_to_index(index, url, html):
             for line in child_text.split('\n'):
                 line = line.rstrip().lstrip()
                 for keyword in split_to_word(line):
-                    add_to_index(index, keyword, url)
+                    add_to_index(keyword, url)
 
 
-def union(to_crawl, new_url_links_list):
+def union_url_links(to_crawl, new_url_links_list):
     """
     クローリングするURLに重複がないように
     するための関数
     """
-
     for new_url_link in new_url_links_list:
         if new_url_link not in to_crawl:
             to_crawl.append(new_url_link)
@@ -106,20 +107,19 @@ def crawler(seed, max_depth):
     to_crawl = [seed]
     crawled = []
     next_depth = []
-    index = []
     depth = 0
     while to_crawl and depth <= max_depth:
         page = to_crawl.pop()
         if page not in crawled:
             content = get_page(page)
             if content:
-                add_page_to_index(index, page, content)
+                add_page_to_index(page, content)
                 new_url_links = extract_page_url_links(content)
                 new_url_links_list = []
                 for new_url_link in new_url_links:
                     new_url_link = str(new_url_link)
                     new_url_links_list.append(new_url_link)
-                union(to_crawl, new_url_links_list)
+                union_url_links(to_crawl, new_url_links_list)
                 crawled.append(page)
         if not to_crawl:
             to_crawl, next_depth = next_depth, []

@@ -15,8 +15,8 @@ class TimeStampedModel(models.Model):
 
 class Index(TimeStampedModel):
     keyword = models.TextField()
-    # url = models.URLField(max_length=1024)
-    url = models.CharField(max_length=2048)
+    # url = models.CharField(max_length=2048)
+    url_json = models.JSONField()
 
     def __str__(self):
-        return f'{self.keyword}: {self.url}'
+        return f'{self.keyword}: {self.url_json}'
