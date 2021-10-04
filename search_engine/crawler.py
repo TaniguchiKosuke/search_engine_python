@@ -43,13 +43,13 @@ def add_to_index(keyword, url):
     print(url)
     index = Index.objects.filter(keyword=keyword)
     if index:
-        url = index.filter(url__icontains=url)
+        url = index.filter(url_json__icontains=url)
         if not url:
             pass
     else:
         Index.objects.create(
             keyword = keyword,
-            url =url
+            url_json =url
         )
 
 

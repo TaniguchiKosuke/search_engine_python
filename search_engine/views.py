@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.generic.list import ListView
 from django.views.generic.base import TemplateView
 from .models import Index
@@ -13,9 +13,6 @@ class SearchView(ListView):
     queryset = Index
 
     def get_queryset(self):
-        # seed = 'https://www.yahoo.co.jp/'
-        seed = 'https://news.yahoo.co.jp/'
-        # crawler(seed, 2)
         query = self.request.GET.get('query')
         if query:
             queryset = Index.objects.filter(keyword=query)[:10]
@@ -33,3 +30,9 @@ class CrawlerSettingsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+
+def start_crawling(request):
+    seed = 'https://news.yahoo.co.jp/'
+    crawler(seed, 2)
+    return redirect('search_engine:search')
