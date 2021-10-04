@@ -10,7 +10,7 @@ class SearchView(ListView):
     queryset = Index
 
     def get_queryset(self):
-        seed = 'https://note.nkmk.me/python-set/'
+        seed = 'https://www.yahoo.co.jp/'
         crawler(seed, 2)
         query = self.request.GET.get('query')
         if query:

@@ -4,12 +4,14 @@ from bs4 import BeautifulSoup
 from .models import Index
 import ipadic
 import MeCab
+import time
 
 
 def split_to_word(text):
     words = []
     # m = MeCab.Tagger("-Ochasen")
     m = MeCab.Tagger(ipadic.MECAB_ARGS)
+    #この処理をしないとエラーが出る
     text = str(text).lower()
     node = m.parseToNode(text)
     while node:
@@ -20,6 +22,7 @@ def split_to_word(text):
 
 def get_page(page_url):
     r = requests.get(page_url)
+    time.sleep(3)
     if r.status_code == 200:
         return r.content
 
@@ -52,31 +55,44 @@ def add_page_to_index(index, url, html):
                     add_to_index(index, keyword, url)
 
 
+def union(to_crawl, new_url_links):
+    """
+    クローリングするURLに重複がないように
+    するための関数
+    """
+    for new_url_link in new_url_links:
+        if new_url_link not in to_crawl:
+            to_crawl.append(new_url_link)
+
+
 def extract_page_url_links(html):
     soup = BeautifulSoup(html, 'html.parser')
-    return soup.find_all('a')
+    a_tags = soup.find_all('a')
+    a_tags_list = []
+    for a_tag in a_tags:
+        a_tag_href = a_tag.get('href')
+        if a_tag_href.startswith('http'):
+            a_tags_list.append(a_tag)
+        else:
+            continue
+    return a_tags_list
 
 
 def crawler(seed, max_depth):    
-    to_crawl = {seed}
+    to_crawl = [seed]
     crawled = []
     next_depth = []
     index = []
     depth = 0
-    while to_crawl and (depth <= max_depth):
+    while to_crawl and depth <= max_depth:
         page = to_crawl.pop()
         if page not in crawled:
             content = get_page(page)
             add_page_to_index(index, page, content)
-            # to_crawl.union(next_depth, extract_page_url_links(get_page(page)))
-            new_url_links = extract_page_url_links(get_page(page))
-            for new_url_link in new_url_links:
-                if new_url_link not in to_crawl:
-                    to_crawl.add(new_url_link)
+            new_url_links = extract_page_url_links(content)
+            union(to_crawl, new_url_links)
             crawled.append(page)
         if not to_crawl:
             to_crawl, next_depth = next_depth, []
-            depth = depth + 1
-    print('to_crawl======================================')
-    print(to_crawl)
+            depth += 1
     return crawled
