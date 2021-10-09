@@ -51,7 +51,7 @@ def change_index_to_json(keyword, url):
     index_dict = dict()
     index_dict["keyword"] = keyword
     index_dict['url'] = [url]
-    index_json = json.dumps(index_dict)
+    index_json = json.dumps(index_dict, ensure_ascii=False)
     return index_json
 
 
@@ -69,10 +69,7 @@ def find_url_in_index(index_json, url, keyword):
     response:
         True or False
     """
-    print('index_son=========================')
     index_json = json.loads(index_json)
-    print('index_json=====================================')
-    print(index_json)
     if index_json['keyword'] == keyword:
         urls = index_json['url']
         if url in urls:
@@ -86,7 +83,7 @@ def add_index_to_index_json(index_json, url, keyword):
     keywordが既に存在し、かつ、urlが存在しないときに、index_jsonに
     urlを追加する処理
         request:
-        index_json:
+        index_json:json
             {
                 "keyword": keyword,
                 "url": [url1, url2, url3, ...]
@@ -98,6 +95,8 @@ def add_index_to_index_json(index_json, url, keyword):
     if index_json['keyword'] == keyword:
         url_list = index_json['url']
         url_list.append(url)
+        index_json = json.dumps(index_json, ensure_ascii=False)
+        return index_json
 
 
 def add_to_index(keyword, url):
@@ -109,31 +108,31 @@ def add_to_index(keyword, url):
     """
     print('url===========================')
     print(url)
+    print(keyword)
     index = Index.objects.filter(keyword=keyword).first()
     if index:
         print('index is not None!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        # url = index.filter(url_json__icontains=url)
         index_json = index.index_json
-        print('index_json')
         if index_json:
-            url = find_url_in_index(index_json, url, keyword)
-            if not url:
-                add_index_to_index_json(index_json, url, keyword)
+            url_exist = find_url_in_index(index_json, url, keyword)
+            if not url_exist:
+                new_index_json = add_index_to_index_json(index_json, url, keyword)
+                index.index_json = new_index_json
+                index.save()
     else:
-        print('index is None!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        index_json = change_index_to_json(keyword, url)
-        Index.objects.create(
-            keyword = keyword,
-            index_json = index_json
-        )
+        if keyword and not keyword.isspace():
+            print('index is None!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            index_json = change_index_to_json(keyword, url)
+            Index.objects.create(
+                keyword = keyword,
+                index_json = index_json
+            )
 
 
 def add_page_to_index(url, html):
     """
     取得したページをインデックスに追加
     """
-    print(type(url))
-    print(type(html))
     body_soup = BeautifulSoup(html, "html.parser").find('body')
     for child_tag in body_soup.findChildren():
         #直下の処理でscritpタグを処理から外す
