@@ -6,6 +6,7 @@ from .models import Index
 import ipadic
 import MeCab
 import time
+import json
 
 
 def split_to_word(text):
@@ -35,21 +36,95 @@ def get_page(page_url):
         return r.content
 
 
+def change_index_to_json(keyword, url):
+    """
+    keywordとurlをjsonに変える処理
+    request:
+        keyword: string
+        url: string
+    response:json
+    {
+        "keyword": keyword,
+        "url": [url1, url2, ..]
+    }
+    """
+    index_dict = dict()
+    index_dict["keyword"] = keyword
+    index_dict['url'] = [url]
+    index_json = json.dumps(index_dict)
+    return index_json
+
+
+def find_url_in_index(index_json, url, keyword):
+    """
+    Indexモデルに指定のkeywordのurlが存在するか判定するための処理
+    request:
+        index_json:
+            {
+                "keyword": keyword,
+                "url": [url1, url2, url3, ...]
+            }
+        url: string
+        keyrword: string
+    response:
+        True or False
+    """
+    print('index_son=========================')
+    index_json = json.loads(index_json)
+    print('index_json=====================================')
+    print(index_json)
+    if index_json['keyword'] == keyword:
+        urls = index_json['url']
+        if url in urls:
+            return True
+        else:
+            return False
+
+
+def add_index_to_index_json(index_json, url, keyword):
+    """
+    keywordが既に存在し、かつ、urlが存在しないときに、index_jsonに
+    urlを追加する処理
+        request:
+        index_json:
+            {
+                "keyword": keyword,
+                "url": [url1, url2, url3, ...]
+            }
+        url: string
+        keyrword: string
+    """
+    index_json = json.loads(index_json)
+    if index_json['keyword'] == keyword:
+        url_list = index_json['url']
+        url_list.append(url)
+
+
 def add_to_index(keyword, url):
     """
     キーワードとurlをDBに追加
+    request:
+        keyword: string
+        url: string
     """
     print('url===========================')
     print(url)
-    index = Index.objects.filter(keyword=keyword)
+    index = Index.objects.filter(keyword=keyword).first()
     if index:
-        url = index.filter(url_json__icontains=url)
-        if not url:
-            pass
+        print('index is not None!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        # url = index.filter(url_json__icontains=url)
+        index_json = index.index_json
+        print('index_json')
+        if index_json:
+            url = find_url_in_index(index_json, url, keyword)
+            if not url:
+                add_index_to_index_json(index_json, url, keyword)
     else:
+        print('index is None!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        index_json = change_index_to_json(keyword, url)
         Index.objects.create(
             keyword = keyword,
-            url_json =url
+            index_json = index_json
         )
 
 
