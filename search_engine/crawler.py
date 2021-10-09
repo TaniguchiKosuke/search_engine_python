@@ -2,7 +2,8 @@ from bs4.element import ContentMetaAttributeValue
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-from .models import Index
+from requests.api import request
+from .models import Index, Article
 import ipadic
 import MeCab
 import time
@@ -34,6 +35,26 @@ def get_page(page_url):
     time.sleep(3)
     if r.status_code == 200:
         return r.content
+
+
+def create_new_article(url, html):
+    """
+    新しいurlを見つけたら、記事のタイトルと共にArticleモデルに保存
+    """
+    article_title = html.find('h1')
+    if not article_title:
+        article_title = html.find('h2')
+        if not article_title:
+            article_title = html.find('h3')
+            if not article_title:
+                article_title = html.find('p')
+    article_title = article_title.get_text()
+    print('article_title============')
+    print(article_title)
+    Article.objects.create(
+        url = url,
+        title = article_title
+    )
 
 
 def change_index_to_json(keyword, url):
@@ -99,29 +120,36 @@ def add_index_to_index_json(index_json, url, keyword):
         return index_json
 
 
-def add_to_index(keyword, url):
+def add_to_index(keyword, url, html):
     """
     キーワードとurlをDBに追加
     request:
         keyword: string
         url: string
+        html: bs4.element.Tag
     """
     print('url===========================')
     print(url)
     print(keyword)
     index = Index.objects.filter(keyword=keyword).first()
     if index:
-        print('index is not None!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print('index is not None')
         index_json = index.index_json
         if index_json:
             url_exist = find_url_in_index(index_json, url, keyword)
             if not url_exist:
+                article = Article.objects.filter(url=url)
+                if not article:
+                    create_new_article(url, html)
                 new_index_json = add_index_to_index_json(index_json, url, keyword)
                 index.index_json = new_index_json
                 index.save()
     else:
         if keyword and not keyword.isspace():
-            print('index is None!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            print('index is None')
+            article = Article.objects.filter(url=url)
+            if not article:
+                create_new_article(url, html)
             index_json = change_index_to_json(keyword, url)
             Index.objects.create(
                 keyword = keyword,
@@ -144,7 +172,7 @@ def add_page_to_index(url, html):
             for line in child_text.split('\n'):
                 line = line.rstrip().lstrip()
                 for keyword in split_to_word(line):
-                    add_to_index(keyword, url)
+                    add_to_index(keyword, url, body_soup)
 
 
 def union_url_links(to_crawl, new_url_links_list):

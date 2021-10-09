@@ -1,0 +1,54 @@
+body{
+  background:#eee;
+  }                
+  .ibox-content {
+      background-color: #FFFFFF;
+      color: inherit;
+      padding: 15px 20px 20px 20px;
+      border-color: #E7EAEC;
+      border-image: none;
+      border-style: solid solid none;
+      border-width: 1px 0px;
+  }
+  
+  .search-form {
+      margin-top: 10px;
+  }
+  
+  .search-result h4 {
+      margin-bottom: 0;
+      color: #1E0FBE;
+      font-weight: 380;
+  }
+
+  .search-result h4 a {
+    text-decoration: none;
+  }
+
+  .search-result h4 a:hover {
+    text-decoration: underline;
+  }
+  
+  .search-result .search-link {
+      color: rgb(65, 64, 64);
+      font-size: 14px;
+  }
+  
+  .search-result p {
+      font-size: 12px;
+      margin-top: 5px;
+  }
+  
+  .hr-line-dashed {
+      border-top: 1px dashed #E7EAEC;
+      color: #ffffff;
+      background-color: #ffffff;
+      height: 1px;
+      margin: 20px 0;
+  }
+  
+  h2 {
+      font-size: 24px;
+      font-weight: 100;
+  }
+  

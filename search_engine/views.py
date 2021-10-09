@@ -2,7 +2,7 @@ from django.db.models.query import QuerySet
 from django.shortcuts import redirect, render
 from django.views.generic.list import ListView
 from django.views.generic.base import TemplateView
-from .models import Index
+from .models import Article, Index
 from .crawler import crawler
 import json
 
@@ -24,11 +24,12 @@ class SearchView(ListView):
                 print('=============================================')
                 print(index_dict)
                 if index_dict['url']:
-                    queryset = list()
                     urls = index_dict['url']
+                    articles = list()
                     for url in urls:
-                        queryset.append(url)
-                    return queryset
+                        article = Article.objects.filter(url=url).first()
+                        articles.append(article)
+                    queryset = articles
             else:
                 queryset = None
         else:
