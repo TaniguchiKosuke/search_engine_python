@@ -174,7 +174,7 @@ def extract_page_url_links(html):
     return url_links_list
 
 
-def crawler(seed, max_depth):
+def crawler(seed, max_depth, stop_flag):
     """
     クローラーのmain関数
     """
@@ -182,20 +182,21 @@ def crawler(seed, max_depth):
     crawled = []
     next_depth = []
     depth = 0
-    while to_crawl and depth <= max_depth:
-        page = to_crawl.pop()
-        if page not in crawled:
-            content = get_page(page)
-            if content:
-                add_page_to_index(page, content)
-                new_url_links = extract_page_url_links(content)
-                new_url_links_list = []
-                for new_url_link in new_url_links:
-                    new_url_link = str(new_url_link)
-                    new_url_links_list.append(new_url_link)
-                union_url_links(to_crawl, new_url_links_list)
-                crawled.append(page)
-        if not to_crawl:
-            to_crawl, next_depth = next_depth, []
-            depth += 1
+    while not stop_flag:
+        while to_crawl and depth <= max_depth:
+            page = to_crawl.pop()
+            if page not in crawled:
+                content = get_page(page)
+                if content:
+                    add_page_to_index(page, content)
+                    new_url_links = extract_page_url_links(content)
+                    new_url_links_list = []
+                    for new_url_link in new_url_links:
+                        new_url_link = str(new_url_link)
+                        new_url_links_list.append(new_url_link)
+                    union_url_links(to_crawl, new_url_links_list)
+                    crawled.append(page)
+            if not to_crawl:
+                to_crawl, next_depth = next_depth, []
+                depth += 1
     return crawled

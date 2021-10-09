@@ -20,3 +20,11 @@ class Index(TimeStampedModel):
 
     def __str__(self):
         return f'{self.keyword}: {self.index_json}'
+
+
+class Article(TimeStampedModel):
+    title = models.CharField(max_length=1024)
+    url = models.URLField()
+
+    def __str__(self):
+        return f'{self.title}: {self.url}'

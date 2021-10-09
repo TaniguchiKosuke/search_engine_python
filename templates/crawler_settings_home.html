@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 
+
 {% load static %}
 {% block content %}
 <div class="container light-style flex-grow-1 container-p-y">
@@ -40,10 +41,20 @@
 
             <div class="card-body">
               <div class="form-group">
-                <form method="POST">
-                  {% csrf_token %}
-                  <a href="{% url 'search_engine:start_crawling' %}" class="btn btn-primary" role="button" data-bs-toggle="button">Start Crawling</a>
-                </form>
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control mb-1" value="nmaxwell">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" value="Nelle Maxwell">
+              </div>
+              <div class="form-group">
+                <label class="form-label">E-mail</label>
+                <input type="text" class="form-control mb-1" value="nmaxwell@mail.com">
+                <div class="alert alert-warning mt-3">
+                  Your email is not confirmed. Please check your inbox.<br>
+                  <a href="javascript:void(0)">Resend confirmation</a>
+                </div>
               </div>
             </div>
 
