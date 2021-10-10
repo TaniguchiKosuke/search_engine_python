@@ -19,20 +19,23 @@ class SearchView(ListView):
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get('query')
         if query:
-            index = Index.objects.filter(keyword__icontains=query).first()
-            if index:
-                index_json = index.index_json
-                index_dict = json.loads(index_json)
-                print('=============================================')
-                print(index_dict)
-                if index_dict['url']:
-                    urls = index_dict['url']
-                    articles = list()
-                    for url in urls:
-                        article = Article.objects.filter(url=url).first()
-                        articles.append(article)
-                    context['object_list'] = articles
-                    context['len_articles'] = len(articles)
+            index_qs = Index.objects.filter(keyword__icontains=query)
+            if index_qs:
+                article_list = list()
+                for index in index_qs:
+                    index_json = index.index_json
+                    index_dict = json.loads(index_json)
+                    print('=============================================')
+                    print(index_dict)
+                    if index_dict['url']:
+                        urls = index_dict['url']
+                        articles = list()
+                        for url in urls:
+                            article = Article.objects.filter(url=url).first()
+                            articles.append(article)
+                        article_list.extend(articles)
+                context['object_list'] = article_list
+                context['len_articles'] = len(article_list)
                 context['query'] = query
             else:
                 context['object_list'] = None

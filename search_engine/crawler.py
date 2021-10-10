@@ -175,12 +175,19 @@ def add_page_to_index(url, html):
             if child_tag.name == 'script':
                 continue
             #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
-            if child_tag.name == 'h1' or child_tag.name == 'h2' or child_tag.name == 'h3':
+            elif child_tag.name == 'h1':
                 child_text = child_tag.text
-                for line in child_text.split('\n'):
-                    line = line.rstrip().lstrip()
-                    for keyword in split_to_word(line):
-                        add_to_index(keyword, url, body_soup)
+            elif child_tag.name == 'h2':
+                child_text = child_tag.text
+            elif child_tag.name == 'h3':
+                child_text = child_tag.text
+            elif child_tag.name == 'p':
+                child_text = child_tag.text
+                if child_text:
+                    for line in child_text.split('\n'):
+                        line = line.rstrip().lstrip()
+                        for keyword in split_to_word(line):
+                            add_to_index(keyword, url, body_soup)
 
 
 def union_url_links(to_crawl, new_url_links_list):
