@@ -19,7 +19,7 @@ class SearchView(ListView):
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get('query')
         if query:
-            index = Index.objects.filter(keyword=query).first()
+            index = Index.objects.filter(keyword__icontains=query).first()
             if index:
                 index_json = index.index_json
                 index_dict = json.loads(index_json)
@@ -59,7 +59,8 @@ class CrawlerSettingsView(TemplateView):
 
 def start_crawling(request):
     # seed = 'https://news.yahoo.co.jp/'
-    seed = 'https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%A4%E3%83%B3%E3%83%9A%E3%83%BC%E3%82%B8'
+    # seed = 'https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%A4%E3%83%B3%E3%83%9A%E3%83%BC%E3%82%B8'
+    seed = 'https://www.bbc.com/'
     crawler(seed, 2, stop_flag=False)
     return redirect('search_engine:crawler_settings')
 

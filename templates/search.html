@@ -36,9 +36,11 @@
                     <div class="search-result">
                         <h4><a href="{{ page.url }}">{{ page.title }}</a></h4>
                         <a href="{{ page.url }}" class="search-link">{{ page.url }}</a>
+                        {% if page.content %}
                         <p style="font-size: 16px;">
                           {{ page.content }}
                         </p>
+                        {% endif %}
                     </div>
                     <div class="hr-line-dashed"></div>
                   {% endfor %}
