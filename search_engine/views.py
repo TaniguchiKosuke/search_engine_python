@@ -1,3 +1,4 @@
+from bs4.element import ContentMetaAttributeValue
 from django.db.models.query import QuerySet
 from django.shortcuts import redirect, render
 from django.views.generic.list import ListView
@@ -14,7 +15,8 @@ class SearchView(ListView):
     template_name = 'search.html'
     queryset = Index
 
-    def get_queryset(self):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         query = self.request.GET.get('query')
         if query:
             index = Index.objects.filter(keyword=query).first()
@@ -29,12 +31,15 @@ class SearchView(ListView):
                     for url in urls:
                         article = Article.objects.filter(url=url).first()
                         articles.append(article)
-                    queryset = articles
+                    context['object_list'] = articles
+                    context['len_articles'] = len(articles)
+                context['query'] = query
             else:
-                queryset = None
+                context['object_list'] = None
+                context['query'] = query
         else:
-            queryset = Index.objects.all()[:50]
-        return queryset
+            context['object_list'] = Index.objects.all()[:50]
+        return context
 
 
 class CrawlerSettingsHomeView(TemplateView):
@@ -53,7 +58,8 @@ class CrawlerSettingsView(TemplateView):
 
 
 def start_crawling(request):
-    seed = 'https://news.yahoo.co.jp/'
+    # seed = 'https://news.yahoo.co.jp/'
+    seed = 'https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%A4%E3%83%B3%E3%83%9A%E3%83%BC%E3%82%B8'
     crawler(seed, 2, stop_flag=False)
     return redirect('search_engine:crawler_settings')
 

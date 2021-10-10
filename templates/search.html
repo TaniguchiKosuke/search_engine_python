@@ -23,19 +23,21 @@
                   </form>
                 </div>
 
+                {% if object_list%}
                 <div style="margin: 12px;">
                   <h5>
-                      160 results found for: <span class="text-navy">"Bootdey"</span>
+                      {{ len_articles }} results found for: <span class="text-navy">"{{ query }}"</span>
                   </h5>
                   <small>Request time  (0.23 seconds)</small>
                 </div>
+                {% endif %}
                 
                   {% for page in object_list %}
                     <div class="search-result">
                         <h4><a href="{{ page.url }}">{{ page.title }}</a></h4>
                         <a href="{{ page.url }}" class="search-link">{{ page.url }}</a>
-                        <p>
-                          
+                        <p style="font-size: 16px;">
+                          {{ page.content }}
                         </p>
                     </div>
                     <div class="hr-line-dashed"></div>

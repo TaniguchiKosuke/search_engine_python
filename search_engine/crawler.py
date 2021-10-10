@@ -49,12 +49,19 @@ def create_new_article(url, html):
             if not article_title:
                 article_title = html.find('p')
     article_title = article_title.get_text()
+    content = html.find('p')
+    if content is not None:
+        content = content.get_text().replace('n', '')
     print('article_title============')
     print(article_title)
-    Article.objects.create(
-        url = url,
-        title = article_title
-    )
+    print('content--------------------------')
+    print(content)
+    if url and article_title:
+        Article.objects.create(
+            url = url,
+            title = article_title,
+            content = content
+        )
 
 
 def change_index_to_json(keyword, url):
@@ -162,17 +169,18 @@ def add_page_to_index(url, html):
     取得したページをインデックスに追加
     """
     body_soup = BeautifulSoup(html, "html.parser").find('body')
-    for child_tag in body_soup.findChildren():
-        #直下の処理でscritpタグを処理から外す
-        if child_tag.name == 'script':
-            continue
-        #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
-        if child_tag.name == 'h1' or child_tag.name == 'h2' or child_tag.name == 'h3':
-            child_text = child_tag.text
-            for line in child_text.split('\n'):
-                line = line.rstrip().lstrip()
-                for keyword in split_to_word(line):
-                    add_to_index(keyword, url, body_soup)
+    if body_soup:
+        for child_tag in body_soup.findChildren():
+            #直下の処理でscritpタグを処理から外す
+            if child_tag.name == 'script':
+                continue
+            #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
+            if child_tag.name == 'h1' or child_tag.name == 'h2' or child_tag.name == 'h3':
+                child_text = child_tag.text
+                for line in child_text.split('\n'):
+                    line = line.rstrip().lstrip()
+                    for keyword in split_to_word(line):
+                        add_to_index(keyword, url, body_soup)
 
 
 def union_url_links(to_crawl, new_url_links_list):
