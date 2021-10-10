@@ -41,21 +41,19 @@ def create_new_article(url, html):
     """
     新しいurlを見つけたら、記事のタイトルと共にArticleモデルに保存
     """
-    article_title = html.find('h1')
+    article_title = html.find('body').find('h1')
     if not article_title:
-        article_title = html.find('h2')
+        article_title = html.find('body').find('h2')
         if not article_title:
-            article_title = html.find('h3')
+            article_title = html.find('body').find('h3')
             if not article_title:
-                article_title = html.find('p')
+                article_title = html.find('body').find('p')
     article_title = article_title.get_text()
-    content = html.find('p')
-    if content is not None:
-        content = content.get_text().replace('n', '')
-    print('article_title============')
-    print(article_title)
-    print('content--------------------------')
-    print(content)
+    meta_description = html.find('head').find('meta', attrs={'name': 'description'})
+    if meta_description is not None:
+        content = meta_description.get_text().replace('n', '')
+    else:
+        content = None
     if url and article_title:
         Article.objects.create(
             url = url,
@@ -135,12 +133,8 @@ def add_to_index(keyword, url, html):
         url: string
         html: bs4.element.Tag
     """
-    print('url===========================')
-    print(url)
-    print(keyword)
     index = Index.objects.filter(keyword=keyword).first()
     if index:
-        print('index is not None')
         index_json = index.index_json
         if index_json:
             url_exist = find_url_in_index(index_json, url, keyword)
@@ -153,7 +147,6 @@ def add_to_index(keyword, url, html):
                 index.save()
     else:
         if keyword and not keyword.isspace():
-            print('index is None')
             article = Article.objects.filter(url=url)
             if not article:
                 create_new_article(url, html)
@@ -168,10 +161,26 @@ def add_page_to_index(url, html):
     """
     取得したページをインデックスに追加
     """
-    body_soup = BeautifulSoup(html, "html.parser").find('body')
-    if body_soup:
-        for child_tag in body_soup.findChildren():
-            #直下の処理でscritpタグを処理から外す
+    soup = BeautifulSoup(html, "html.parser")
+    head = soup.find('head')
+    body = soup.find('body')
+    if head:
+        title_tag = head.find('title')
+        meta_description = head.find('meta', attrs={'name': 'description'})
+        if title_tag:
+            child_text = title_tag.get_text()
+            for line in child_text.split('\n'):
+                line = line.rstrip().lstrip()
+                for keyword in split_to_word(line):
+                    add_to_index(keyword, url, soup)
+        elif meta_description:
+            child_text = meta_description.get_text()
+            for line in child_text.split('\n'):
+                line = line.rstrip().lstrip()
+                for keyword in split_to_word(line):
+                    add_to_index(keyword, url, soup)
+    elif body:
+        for child_tag in body.findChildren():
             if child_tag.name == 'script':
                 continue
             #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
@@ -181,13 +190,14 @@ def add_page_to_index(url, html):
                 child_text = child_tag.text
             elif child_tag.name == 'h3':
                 child_text = child_tag.text
-            elif child_tag.name == 'p':
+            elif child_tag.name == 'h4':
                 child_text = child_tag.text
                 if child_text:
                     for line in child_text.split('\n'):
                         line = line.rstrip().lstrip()
                         for keyword in split_to_word(line):
-                            add_to_index(keyword, url, body_soup)
+                            add_to_index(keyword, url, soup)
+
 
 
 def union_url_links(to_crawl, new_url_links_list):

@@ -32,7 +32,8 @@ class SearchView(ListView):
                         articles = list()
                         for url in urls:
                             article = Article.objects.filter(url=url).first()
-                            articles.append(article)
+                            if not article in article_list:
+                                articles.append(article)
                         article_list.extend(articles)
                 context['object_list'] = article_list
                 context['len_articles'] = len(article_list)
@@ -62,10 +63,11 @@ class CrawlerSettingsView(TemplateView):
 
 def start_crawling(request):
     # seed = 'https://news.yahoo.co.jp/'
+    #下のwikipediaのサイトはうまくクローリングできない
     # seed = 'https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%A4%E3%83%B3%E3%83%9A%E3%83%BC%E3%82%B8'
-    # seed = 'https://www.bbc.com/'
-    seed = 'https://medium.com/'
-    crawler(seed, 2, stop_flag=False)
+    seed = 'https://www.bbc.com/'
+    # seed = 'https://medium.com/'
+    crawler(seed, 5, stop_flag=False)
     return redirect('search_engine:crawler_settings')
 
 
