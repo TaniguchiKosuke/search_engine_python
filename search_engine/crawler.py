@@ -1,29 +1,53 @@
-from bs4.element import ContentMetaAttributeValue
 import requests
-from urllib.parse import urljoin
-from bs4 import BeautifulSoup
-from requests.api import request
-from .models import Index, Article
-import ipadic
-import MeCab
 import time
 import json
+import re
+from requests.api import request
+from urllib.parse import urljoin
+
+from bs4.element import ContentMetaAttributeValue
+from bs4 import BeautifulSoup
+import ipadic
+import MeCab
+import nltk
+
+from .models import Index, Article
 
 
-def split_to_word(text):
+def split_to_japanese_word(text):
     """
     MeCabにより、日本語を解析
-    格助詞や助動詞などの特に意味のない日本語
-    もキーワードとして追加されるのでそこの除外処理が必要かも
+    品詞に応じて処理
     """
-    words = []
+    words = list()
+    select_part = ['動詞', '名詞', '形容詞', '形容動詞', '副詞']
     m = MeCab.Tagger(ipadic.MECAB_ARGS)
     #下記の処理をしないとエラーが出る
     text = str(text).lower()
     node = m.parseToNode(text)
     while node:
-        words.append(node.surface)
+        if node is not None:
+            pos = node.feature.split(',')[0]
+            if pos in select_part:
+                words.append(node.surface)
         node = node.next
+    return words
+
+
+def split_to_english_word(text):
+    """
+    英語を解析し、品詞に応じてインデックスのためのkeywordを作成
+    """
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+    words = nltk.word_tokenize(text)
+    pos = nltk.pos_tag(words)
+    words = list()
+    for p in pos:
+        word = p[0]
+        part = p[1]
+        if part == 'PRP' or part == 'NNP' or part == 'VBP' or part == 'NN' or part == 'RB':
+            words.append(word)
     return words
 
 
@@ -41,15 +65,18 @@ def create_new_article(url, html):
     """
     新しいurlを見つけたら、記事のタイトルと共にArticleモデルに保存
     """
-    article_title = html.find('body').find('h1')
+    html_head = html.find('head')
+    html_body = html.find('body')
+    article_title = html_body.find('h1')
     if not article_title:
-        article_title = html.find('body').find('h2')
+        article_title = html_body.find('h2')
         if not article_title:
-            article_title = html.find('body').find('h3')
+            article_title = html_body.find('h3')
             if not article_title:
-                article_title = html.find('body').find('p')
-    article_title = article_title.get_text()
-    meta_description = html.find('head').find('meta', attrs={'name': 'description'})
+                article_title = html_body.find('p')
+    if article_title:
+        article_title = article_title.get_text()
+    meta_description = html_head.find('meta', attrs={'name': 'description'})
     if meta_description is not None:
         content = meta_description.get_text().replace('n', '')
     else:
@@ -58,8 +85,7 @@ def create_new_article(url, html):
         Article.objects.create(
             url = url,
             title = article_title,
-            content = content
-        )
+            content = content)
 
 
 def change_index_to_json(keyword, url):
@@ -134,6 +160,9 @@ def add_to_index(keyword, url, html):
         html: bs4.element.Tag
     """
     index = Index.objects.filter(keyword=keyword).first()
+    print('url and keyword========================')
+    print(url)
+    print(keyword)
     if index:
         index_json = index.index_json
         if index_json:
@@ -153,8 +182,14 @@ def add_to_index(keyword, url, html):
             index_json = change_index_to_json(keyword, url)
             Index.objects.create(
                 keyword = keyword,
-                index_json = index_json
-            )
+                index_json = index_json)
+
+
+def judge_japanese(line):
+    """
+    日本語かどうかを判定する処理
+    """
+    return True if re.search(r'[ぁ-んァ-ン]', line) else False 
 
 
 def add_page_to_index(url, html):
@@ -171,14 +206,24 @@ def add_page_to_index(url, html):
             child_text = title_tag.get_text()
             for line in child_text.split('\n'):
                 line = line.rstrip().lstrip()
-                for keyword in split_to_word(line):
-                    add_to_index(keyword, url, soup)
+                is_japanese = judge_japanese(line)
+                if is_japanese and line is not None:
+                    for keyword in split_to_japanese_word(line):
+                        add_to_index(keyword, url, soup)
+                else:
+                    for keyword in split_to_english_word(line):
+                        add_to_index(keyword, url, soup)
         elif meta_description:
             child_text = meta_description.get_text()
             for line in child_text.split('\n'):
                 line = line.rstrip().lstrip()
-                for keyword in split_to_word(line):
-                    add_to_index(keyword, url, soup)
+                is_japanese = judge_japanese(line)
+                if is_japanese and line is not None:
+                    for keyword in split_to_japanese_word(line):
+                        add_to_index(keyword, url, soup)
+                else:
+                    for keyword in split_to_english_word(line):
+                        add_to_index(keyword, url, soup)
     elif body:
         for child_tag in body.findChildren():
             if child_tag.name == 'script':
@@ -195,9 +240,13 @@ def add_page_to_index(url, html):
                 if child_text:
                     for line in child_text.split('\n'):
                         line = line.rstrip().lstrip()
-                        for keyword in split_to_word(line):
-                            add_to_index(keyword, url, soup)
-
+                        is_japanese = judge_japanese(line)
+                        if is_japanese and line is not None:
+                            for keyword in split_to_japanese_word(line):
+                                add_to_index(keyword, url, soup)
+                        else:
+                            for keyword in split_to_english_word(line):
+                                add_to_index(keyword, url, soup)
 
 
 def union_url_links(to_crawl, new_url_links_list):
