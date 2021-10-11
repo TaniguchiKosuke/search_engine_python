@@ -38,8 +38,8 @@ def split_to_english_word(text):
     """
     英語を解析し、品詞に応じてインデックスのためのkeywordを作成
     """
-    nltk.download('punkt')
-    nltk.download('averaged_perceptron_tagger')
+    # nltk.download('punkt')
+    # nltk.download('averaged_perceptron_tagger')
     words = nltk.word_tokenize(text)
     pos = nltk.pos_tag(words)
     words = list()
