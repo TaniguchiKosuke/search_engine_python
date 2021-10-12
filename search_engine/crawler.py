@@ -62,7 +62,7 @@ def get_page(page_url):
         return r.content
 
 
-def create_new_article(url, html):
+def create_new_article(url, html, content):
     """
     新しいurlを見つけたら、記事のタイトルと共にArticleモデルに保存
     """
@@ -77,11 +77,6 @@ def create_new_article(url, html):
                 article_title = html_body.find('p')
     if article_title:
         article_title = article_title.get_text()
-    meta_description = html_head.find('meta', attrs={'name': 'description'})
-    if meta_description is not None:
-        content = meta_description.get_text().replace('n', '')
-    else:
-        content = None
     if url and article_title:
         Article.objects.create(
             url = url,
@@ -152,7 +147,7 @@ def add_index_to_index_json(index_json, url, keyword):
         return index_json
 
 
-def add_to_index(keyword, url, html):
+def add_to_index(keyword, url, html, content):
     """
     キーワードとurlをDBに追加
     request:
@@ -171,7 +166,7 @@ def add_to_index(keyword, url, html):
             if not url_exist:
                 article = Article.objects.filter(url=url)
                 if not article:
-                    create_new_article(url, html)
+                    create_new_article(url, html, content)
                 new_index_json = add_index_to_index_json(index_json, url, keyword)
                 index.index_json = new_index_json
                 index.save()
@@ -179,7 +174,7 @@ def add_to_index(keyword, url, html):
         if keyword and not keyword.isspace():
             article = Article.objects.filter(url=url)
             if not article:
-                create_new_article(url, html)
+                create_new_article(url, html, content)
             index_json = change_index_to_json(keyword, url)
             Index.objects.create(
                 keyword = keyword,
@@ -196,36 +191,38 @@ def judge_japanese(line):
 def add_page_to_index(url, html):
     """
     取得したページをインデックスに追加
+    keywordはmetaタグのテキストか、titleタグのテキストか、h1,h2,h3,h4のテキストから取得
     """
     soup = BeautifulSoup(html, "html.parser")
-    head = soup.find('head')
     body = soup.find('body')
-    if head:
-        title_tag = head.find('title')
-        meta_description = head.find('meta', attrs={'name': 'description'})
-        if title_tag:
-            child_text = title_tag.get_text()
-            for line in child_text.split('\n'):
-                line = line.rstrip().lstrip()
-                is_japanese = judge_japanese(line)
-                if is_japanese and line is not None:
-                    for keyword in split_to_japanese_word(line):
-                        add_to_index(keyword, url, soup)
-                else:
-                    for keyword in split_to_english_word(line):
-                        add_to_index(keyword, url, soup)
-        elif meta_description:
-            child_text = meta_description.get_text()
-            for line in child_text.split('\n'):
-                line = line.rstrip().lstrip()
-                is_japanese = judge_japanese(line)
-                if is_japanese and line is not None:
-                    for keyword in split_to_japanese_word(line):
-                        add_to_index(keyword, url, soup)
-                else:
-                    for keyword in split_to_english_word(line):
-                        add_to_index(keyword, url, soup)
-    elif body:
+    head_title_tag = soup.find('head').find('title')
+    head_meta_description = soup.find('head').find('meta', attrs={'name': 'description'})
+    if head_meta_description:
+        print('mata=====================================')
+        child_text = head_meta_description.get_text()
+        for line in child_text.split('\n'):
+            line = line.rstrip().lstrip()
+            is_japanese = judge_japanese(line)
+            if is_japanese and line is not None:
+                for keyword in split_to_japanese_word(line):
+                    add_to_index(keyword, url, soup, child_text)
+            else:
+                for keyword in split_to_english_word(line):
+                    add_to_index(keyword, url, soup, child_text)
+    elif head_title_tag:
+        print('title=============================')
+        child_text = head_title_tag.get_text()
+        for line in child_text.split('\n'):
+            line = line.rstrip().lstrip()
+            is_japanese = judge_japanese(line)
+            if is_japanese and line is not None:
+                for keyword in split_to_japanese_word(line):
+                    add_to_index(keyword, url, soup, child_text)
+            else:
+                for keyword in split_to_english_word(line):
+                    add_to_index(keyword, url, soup, child_text)
+    else:
+        print('else======================================')
         for child_tag in body.findChildren():
             if child_tag.name == 'script':
                 continue
@@ -244,10 +241,10 @@ def add_page_to_index(url, html):
                         is_japanese = judge_japanese(line)
                         if is_japanese and line is not None:
                             for keyword in split_to_japanese_word(line):
-                                add_to_index(keyword, url, soup)
+                                add_to_index(keyword, url, soup, child_text)
                         else:
                             for keyword in split_to_english_word(line):
-                                add_to_index(keyword, url, soup)
+                                add_to_index(keyword, url, soup, child_text)
 
 
 def union_url_links(to_crawl, new_url_links_list):
@@ -295,11 +292,11 @@ def crawler(seed, max_depth, stop_flag):
                     new_url_links_list.append(new_url_link)
                 union_url_links(to_crawl, new_url_links_list)
                 crawled.append(page)
-                print('new_url_links_list===========================')
-                print(new_url_links_list)
+                # print('new_url_links_list===========================')
+                # print(new_url_links_list)
         if not to_crawl:
             to_crawl, next_depth = next_depth, []
             depth += 1
-        print('to_Crawl================================')
-        print(to_crawl)
+        # print('to_Crawl================================')
+        # print(to_crawl)
     return crawled
