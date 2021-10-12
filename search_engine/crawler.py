@@ -1,3 +1,4 @@
+from nltk import text
 import requests
 import time
 import json
@@ -5,7 +6,6 @@ import re
 from requests.api import request
 from urllib.parse import urljoin
 
-from bs4.element import ContentMetaAttributeValue
 from bs4 import BeautifulSoup
 import ipadic
 import MeCab
@@ -50,6 +50,22 @@ def split_to_english_word(text):
         if part in select_part:
             words.append(word)
     return words
+
+
+def split_word(url, soup, text):
+    """
+    add_page_to_index関数で使用
+    textを分割し、add_to_index関数に渡すための関数
+    """
+    for line in text.split('\n'):
+        line = line.rstrip().lstrip()
+        is_japanese = judge_japanese(line)
+        if is_japanese and line is not None:
+            for keyword in split_to_japanese_word(line):
+                add_to_index(keyword, url, soup, text)
+        else:
+            for keyword in split_to_english_word(line):
+                add_to_index(keyword, url, soup, text)
 
 
 def get_page(page_url):
@@ -156,9 +172,6 @@ def add_to_index(keyword, url, html, content):
         html: bs4.element.Tag
     """
     index = Index.objects.filter(keyword=keyword).first()
-    print('url and keyword========================')
-    print(url)
-    print(keyword)
     if index:
         index_json = index.index_json
         if index_json:
@@ -198,29 +211,18 @@ def add_page_to_index(url, html):
     head_title_tag = soup.find('head').find('title')
     head_meta_description = soup.find('head').find('meta', attrs={'name': 'description'})
     if head_meta_description:
-        print('mata=====================================')
-        child_text = head_meta_description.get_text()
-        for line in child_text.split('\n'):
-            line = line.rstrip().lstrip()
-            is_japanese = judge_japanese(line)
-            if is_japanese and line is not None:
-                for keyword in split_to_japanese_word(line):
-                    add_to_index(keyword, url, soup, child_text)
-            else:
-                for keyword in split_to_english_word(line):
-                    add_to_index(keyword, url, soup, child_text)
+        if head_meta_description['content']:
+            print('mata=====================================')
+            child_text = head_meta_description['content']
+            split_word(url, soup, child_text)
+        else:
+            print('mata=====================================')
+            child_text = head_meta_description.get_text()
+            split_word(url, soup, child_text)
     elif head_title_tag:
         print('title=============================')
         child_text = head_title_tag.get_text()
-        for line in child_text.split('\n'):
-            line = line.rstrip().lstrip()
-            is_japanese = judge_japanese(line)
-            if is_japanese and line is not None:
-                for keyword in split_to_japanese_word(line):
-                    add_to_index(keyword, url, soup, child_text)
-            else:
-                for keyword in split_to_english_word(line):
-                    add_to_index(keyword, url, soup, child_text)
+        split_word(url, soup, child_text)
     else:
         print('else======================================')
         for child_tag in body.findChildren():
@@ -236,15 +238,7 @@ def add_page_to_index(url, html):
             elif child_tag.name == 'h4':
                 child_text = child_tag.text
                 if child_text:
-                    for line in child_text.split('\n'):
-                        line = line.rstrip().lstrip()
-                        is_japanese = judge_japanese(line)
-                        if is_japanese and line is not None:
-                            for keyword in split_to_japanese_word(line):
-                                add_to_index(keyword, url, soup, child_text)
-                        else:
-                            for keyword in split_to_english_word(line):
-                                add_to_index(keyword, url, soup, child_text)
+                    split_word(url, soup, child_text)
 
 
 def union_url_links(to_crawl, new_url_links_list):
