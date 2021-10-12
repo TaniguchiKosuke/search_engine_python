@@ -43,10 +43,11 @@ def split_to_english_word(text):
     words = nltk.word_tokenize(text)
     pos = nltk.pos_tag(words)
     words = list()
+    select_part = ['PRP', 'NNP', 'VBP', 'NN', 'RB']
     for p in pos:
         word = p[0]
         part = p[1]
-        if part == 'PRP' or part == 'NNP' or part == 'VBP' or part == 'NN' or part == 'RB':
+        if part in select_part:
             words.append(word)
     return words
 
@@ -277,28 +278,28 @@ def extract_page_url_links(html):
 
 
 def crawler(seed, max_depth, stop_flag):
-    """
-    クローラーのmain関数
-    """
     to_crawl = [seed]
     crawled = []
     next_depth = []
     depth = 0
-    while not stop_flag:
-        while to_crawl and depth <= max_depth:
-            page = to_crawl.pop()
-            if page not in crawled:
-                content = get_page(page)
-                if content:
-                    add_page_to_index(page, content)
-                    new_url_links = extract_page_url_links(content)
-                    new_url_links_list = []
-                    for new_url_link in new_url_links:
-                        new_url_link = str(new_url_link)
-                        new_url_links_list.append(new_url_link)
-                    union_url_links(to_crawl, new_url_links_list)
-                    crawled.append(page)
-            if not to_crawl:
-                to_crawl, next_depth = next_depth, []
-                depth += 1
+    while to_crawl and depth <= max_depth and not stop_flag:
+        page = to_crawl.pop()
+        if page not in crawled:
+            content = get_page(page)
+            if content:
+                add_page_to_index(page, content)
+                new_url_links = extract_page_url_links(content)
+                new_url_links_list = []
+                for new_url_link in new_url_links:
+                    new_url_link = str(new_url_link)
+                    new_url_links_list.append(new_url_link)
+                union_url_links(to_crawl, new_url_links_list)
+                crawled.append(page)
+                print('new_url_links_list===========================')
+                print(new_url_links_list)
+        if not to_crawl:
+            to_crawl, next_depth = next_depth, []
+            depth += 1
+        print('to_Crawl================================')
+        print(to_crawl)
     return crawled
