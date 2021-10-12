@@ -212,19 +212,15 @@ def add_page_to_index(url, html):
     head_meta_description = soup.find('head').find('meta', attrs={'name': 'description'})
     if head_meta_description:
         if head_meta_description['content']:
-            print('mata=====================================')
             child_text = head_meta_description['content']
             split_word(url, soup, child_text)
         else:
-            print('mata=====================================')
             child_text = head_meta_description.get_text()
             split_word(url, soup, child_text)
     elif head_title_tag:
-        print('title=============================')
         child_text = head_title_tag.get_text()
         split_word(url, soup, child_text)
     else:
-        print('else======================================')
         for child_tag in body.findChildren():
             if child_tag.name == 'script':
                 continue
@@ -286,11 +282,7 @@ def crawler(seed, max_depth, stop_flag):
                     new_url_links_list.append(new_url_link)
                 union_url_links(to_crawl, new_url_links_list)
                 crawled.append(page)
-                # print('new_url_links_list===========================')
-                # print(new_url_links_list)
         if not to_crawl:
             to_crawl, next_depth = next_depth, []
             depth += 1
-        # print('to_Crawl================================')
-        # print(to_crawl)
     return crawled
