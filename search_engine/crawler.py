@@ -172,22 +172,21 @@ def add_to_index(keyword, url, html, content):
         html: bs4.element.Tag
     """
     index = Index.objects.filter(keyword=keyword).first()
+    article = Article.objects.filter(url=url)
+    if not article:
+        create_new_article(url, html, content)
     if index:
+        print('index exists ==============================')
         index_json = index.index_json
         if index_json:
             url_exist = find_url_in_index(index_json, url, keyword)
             if not url_exist:
-                article = Article.objects.filter(url=url)
-                if not article:
-                    create_new_article(url, html, content)
                 new_index_json = add_index_to_index_json(index_json, url, keyword)
                 index.index_json = new_index_json
                 index.save()
     else:
+        print('index does not exist=================================')
         if keyword and not keyword.isspace():
-            article = Article.objects.filter(url=url)
-            if not article:
-                create_new_article(url, html, content)
             index_json = change_index_to_json(keyword, url)
             Index.objects.create(
                 keyword = keyword,
@@ -217,10 +216,10 @@ def add_page_to_index(url, html):
         else:
             child_text = head_meta_description.get_text()
             split_word(url, soup, child_text)
-    elif head_title_tag:
+    if head_title_tag:
         child_text = head_title_tag.get_text()
         split_word(url, soup, child_text)
-    else:
+    if not head_meta_description and not head_title_tag:
         for child_tag in body.findChildren():
             if child_tag.name == 'script':
                 continue
