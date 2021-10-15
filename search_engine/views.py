@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render
 from django.views.generic.list import ListView
 from django.views.generic.base import TemplateView
 from .models import Article, Index
-from .crawler import crawler
+from .crawler.crawler import crawler
 import json
 
 

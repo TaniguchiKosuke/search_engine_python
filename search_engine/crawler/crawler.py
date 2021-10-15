@@ -11,7 +11,7 @@ import ipadic
 import MeCab
 import nltk
 
-from .models import Index, Article
+from ..models import Index, Article
 
 
 def split_to_japanese_word(text):
