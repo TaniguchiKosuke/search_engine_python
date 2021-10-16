@@ -3,7 +3,7 @@ import requests
 import time
 import json
 import re
-from requests.api import request
+from requests.api import head, request
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -75,20 +75,32 @@ def create_new_article(url, html, content):
     """
     html_head = html.find('head')
     html_body = html.find('body')
-    article_title = html_body.find('h1')
-    if not article_title:
-        article_title = html_body.find('h2')
-        if not article_title:
-            article_title = html_body.find('h3')
-            if not article_title:
-                article_title = html_body.find('p')
+    html_title = html_head.find('title')
+    if html_title:
+        article_title = html_title.get_text()
+        if not article_title and html_body.find('h1'):
+              article_title = html_body.find('h1').get_text()
+              if not article_title and html_body.find('h2'):
+                  article_title = html_body.find('h2').get_text()
+                  if not article_title and html_body.find('h3'):
+                      article_title = html_body.find('h3').get_text()
+                      if not article_title and html_body.find('h4'):
+                          article_title = html_body.find('h4').get_text()
+    else:
+        article_title = html_body.find('h1').get_text()
+        if not article_title and html_body.find('h2'):
+            article_title = html_body.find('h2').get_text()
+            if not article_title and html_body.find('h3'):
+                article_title = html_body.find('h3').get_text()
+                if not article_title and html_body.find('h4'):
+                    article_title = html_body.find('h4').get_text()
     if article_title:
         article_title = article_title.get_text()
-    if url and article_title:
-        Article.objects.create(
-            url = url,
-            title = article_title,
-            content = content)
+    if url and article_title and not article_title.isspace():
+          Article.objects.create(
+              url = url,
+              title = article_title,
+              content = content)
 
 
 def add_index_to_index_json(index_json, url, keyword):
