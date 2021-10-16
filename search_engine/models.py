@@ -29,3 +29,10 @@ class Article(TimeStampedModel):
 
     def __str__(self):
         return f'{self.title}: {self.url}: {self.content}'
+
+
+class ToAnalyzePage(TimeStampedModel):
+    url = models.URLField()
+
+    def __str__(self):
+        return f'{self.url}'
