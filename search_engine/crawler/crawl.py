@@ -5,6 +5,7 @@ import json
 import re
 from requests.api import request
 from urllib.parse import urljoin
+import concurrent.futures
 
 from bs4 import BeautifulSoup
 import ipadic
@@ -19,13 +20,13 @@ def get_page(page_url):
     """
     url取得
     """
-    r = requests.get(page_url)
-    time.sleep(2)
+    r = requests.get(page_url, timeout=(3.0, 7.5))
+    time.sleep(3)
     if r.status_code == 200:
         return r.content
 
 
-def extract_page_url_links(page_content, page_url):
+def extract_page_url_links(page_content):
     """
     クローリング先のページのaタグのhref属性を取得し、ToAnalyzePageに追加
     """
@@ -53,6 +54,6 @@ def crawl(max_depth, stop_flag):
         if not article_exist:
             page_content = get_page(page_url)
             if page_content:
-                extract_page_url_links(page_content, page_url)
+                extract_page_url_links(page_content)
                 print('here==========================')
-                analyze()
+                analyze(page_url, page_content)
