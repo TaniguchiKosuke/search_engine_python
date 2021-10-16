@@ -12,7 +12,16 @@ import MeCab
 import nltk
 
 from ..models import Index, Article, ToAnalyzePage
-from .crawl import get_page
+
+
+def get_page(page_url):
+    """
+    url取得
+    """
+    r = requests.get(page_url)
+    time.sleep(2)
+    if r.status_code == 200:
+        return r.content
 
 
 def split_to_japanese_word(text):
@@ -198,39 +207,44 @@ def add_page_to_index(url, html):
     """
     soup = BeautifulSoup(html, "html.parser")
     body = soup.find('body')
-    head_title_tag = soup.find('head').find('title')
-    head_meta_description = soup.find('head').find('meta', attrs={'name': 'description'})
-    if head_meta_description:
-        if head_meta_description['content']:
-            child_text = head_meta_description['content']
+    head = soup.find('head')
+    if head:
+        head_title_tag = head.find('title')
+        head_meta_description = head.find('meta', attrs={'name': 'description'})
+        if head_meta_description:
+            if head_meta_description['content']:
+                child_text = head_meta_description['content']
+                split_word(url, soup, child_text)
+            else:
+                child_text = head_meta_description.get_text()
+                split_word(url, soup, child_text)
+        if head_title_tag:
+            child_text = head_title_tag.get_text()
             split_word(url, soup, child_text)
-        else:
-            child_text = head_meta_description.get_text()
-            split_word(url, soup, child_text)
-    if head_title_tag:
-        child_text = head_title_tag.get_text()
-        split_word(url, soup, child_text)
-    if not head_meta_description and not head_title_tag:
-        for child_tag in body.findChildren():
-            if child_tag.name == 'script':
-                continue
-            #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
-            elif child_tag.name == 'h1':
-                child_text = child_tag.text
-            elif child_tag.name == 'h2':
-                child_text = child_tag.text
-            elif child_tag.name == 'h3':
-                child_text = child_tag.text
-            elif child_tag.name == 'h4':
-                child_text = child_tag.text
-                if child_text:
-                    split_word(url, soup, child_text)
+        if not head_meta_description and not head_title_tag:
+            for child_tag in body.findChildren():
+                if child_tag.name == 'script':
+                    continue
+                #以下でh1, h2, h3といったその記事のキーワードになりそうなタグのテキストを取得
+                elif child_tag.name == 'h1':
+                    child_text = child_tag.text
+                elif child_tag.name == 'h2':
+                    child_text = child_tag.text
+                elif child_tag.name == 'h3':
+                    child_text = child_tag.text
+                elif child_tag.name == 'h4':
+                    child_text = child_tag.text
+                    if child_text:
+                        split_word(url, soup, child_text)
 
 
 def analyze():
-    to_analyze_page = ToAnalyzePage.objects.all()
+    to_analyze_page = ToAnalyzePage.objects.all()[:10]
     if to_analyze_page:
         for page in to_analyze_page:
             page_url = page.url
             html = get_page(page_url)
-            add_page_to_index(page_url, html)
+            if page_url and html:
+                add_page_to_index(page_url, html)
+                #解析したページをToAnalyzePageモデルから削除
+                ToAnalyzePage.objects.get(url=page_url).delete()

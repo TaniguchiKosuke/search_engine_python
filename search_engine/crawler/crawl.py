@@ -11,6 +11,7 @@ import ipadic
 import MeCab
 import nltk
 
+from .analyze import analyze
 from ..models import Index, Article, ToAnalyzePage
 
 
@@ -44,12 +45,14 @@ def extract_page_url_links(page_content, page_url):
 
 def crawl(max_depth, stop_flag):
     depth = 0
-    seeds = ToAnalyzePage.objects.order_by('?')
+    seeds = ToAnalyzePage.objects.all()
     while seeds and depth <= max_depth and not stop_flag:
-        page_url = seeds[0].url
+        page_url = seeds.order_by('?').first().url
+        print(page_url)
         article_exist = Article.objects.filter(url=page_url)
         if not article_exist:
             page_content = get_page(page_url)
             if page_content:
                 extract_page_url_links(page_content, page_url)
-                ToAnalyzePage.objects.get(url=page_url).delete()
+                print('here==========================')
+                analyze()
