@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Article, Index
 
-# Register your models here.
+
+admin.site.register(Index)
+admin.site.register(Article)

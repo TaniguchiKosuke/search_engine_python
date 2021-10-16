@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/search.css' %}">
+{% endblock head %}
+
+{% block content %}
+<div class="container bootstrap snippets bootdey">
+  <div class="row">
+      <div class="col-lg-12">
+          <div class="ibox float-e-margins">
+              <div class="ibox-content">
+                
+                <div class="search-form" style="width: 80%;">
+                  <form action="#" method="get">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="inputSearch" placeholder="Search" value="{{ request.GET.query }}" name="query">
+                      <div class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                {% if object_list%}
+                <div style="margin: 12px;">
+                  <h5>
+                      {{ len_articles }} results found for: <span class="text-navy">"{{ query }}"</span>
+                  </h5>
+                  <small>Request time  (0.23 seconds)</small>
+                </div>
+                {% endif %}
+                
+                  {% for page in object_list %}
+                    <div class="search-result">
+                        <h4><a href="{{ page.url }}">{{ page.title }}</a></h4>
+                        <a href="{{ page.url }}" class="search-link">{{ page.url }}</a>
+                        {% if page.content %}
+                        <p style="font-size: 16px;">
+                          {{ page.content }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="hr-line-dashed"></div>
+                  {% endfor %}
+                  
+                  <div class="text-center">
+                      <div class="btn-group">
+                          <button class="btn btn-white" type="button"><i class="glyphicon glyphicon-chevron-left"></i></button>
+                          <button class="btn btn-white">1</button>
+                          <button class="btn btn-white  active">2</button>
+                          <button class="btn btn-white">3</button>
+                          <button class="btn btn-white">4</button>
+                          <button class="btn btn-white">5</button>
+                          <button class="btn btn-white">6</button>
+                          <button class="btn btn-white">7</button>
+                          <button class="btn btn-white" type="button"><i class="glyphicon glyphicon-chevron-right"></i> </button>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+                
+{% endblock content %}
