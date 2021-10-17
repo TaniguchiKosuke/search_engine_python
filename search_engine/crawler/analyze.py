@@ -8,26 +8,7 @@ import ipadic
 import MeCab
 import nltk
 
-from ..models import Index, Article, ToAnalyzePage
-
-
-# def get_page(page_url):
-#     """
-#     url取得
-#     crawl.pyでも同じ関数を持っているため、ConnectionErrorが発生すると思う。
-#     短時間でリクエストしすぎ。
-#     """
-#     try:
-#         proxies_dic = {
-#             "http": "http://proxy.example.co.jp:8080",
-#             "https": "http://proxy.example.co.jp:8080",}
-#         r = requests.get(page_url, timeout=(3.0, 7.5), proxies=proxies_dic, verify=False)
-#         time.sleep(3)
-#         if r.status_code == 200:
-#             return r.content
-#     except requests.ConnectionError as e:
-#         print("OOPS!! Connection Error. Make sure you are connected to Internet. Technical Details given below.\n")
-#         print(str(e))            
+from ..models import Index, Article, ToAnalyzePage           
 
 
 def split_to_japanese_word(text):
@@ -254,19 +235,9 @@ def add_page_to_index(url, html):
                         split_word(url, soup, child_text)
 
 
-# def analyze():
-#     to_analyze_page = ToAnalyzePage.objects.all()[:10]
-#     if to_analyze_page:
-#         for page in to_analyze_page:
-#             page_url = page.url
-#             html = get_page(page_url)
-#             if page_url and html:
-#                 add_page_to_index(page_url, html)
-#                 ToAnalyzePage.objects.get(url=page_url).delete()
-
-
-def analyze(page_url, html):
-    if page_url and html:
-        add_page_to_index(page_url, html)
-        #解析したページをToAnalyzePageモデルから削除
-        ToAnalyzePage.objects.get(url=page_url).delete()
+def analyze(page_content_dict):
+    if page_content_dict:
+        for page_url, page_content in page_content_dict.items():
+            add_page_to_index(page_url, page_content)
+            #解析したページをToAnalyzePageモデルから削除
+            ToAnalyzePage.objects.get(url=page_url).delete()
