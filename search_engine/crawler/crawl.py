@@ -1,4 +1,5 @@
 from nltk import text
+from nltk.util import filestring
 import requests
 import time
 from requests.api import request
@@ -19,7 +20,7 @@ def get_page(page_url):
         proxies_dic = {
             "http": "http://proxy.example.co.jp:8080",
             "https": "http://proxy.example.co.jp:8080",}
-        r = requests.get(page_url, timeout=(3.0, 7.5), proxies=proxies_dic, verify=False)
+        r = requests.get(page_url, timeout=(3.0, 7.5))
         time.sleep(3)
         if r.status_code == 200:
             return r.content
@@ -54,9 +55,6 @@ def extract_page_url_links(page_content):
 def crawl(max_depth, stop_flag):
     depth = 0
     seeds = ToAnalyzePage.objects.all().exists()
-    print(seeds)
-    print(max_depth)
-    print(stop_flag)
     while seeds and depth <= max_depth and not stop_flag:
         to_analyze_pages = ToAnalyzePage.objects.order_by('?')[:10]
         page_content_dict = dict()

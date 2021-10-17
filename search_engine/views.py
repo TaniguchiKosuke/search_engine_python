@@ -72,3 +72,17 @@ def start_crawling(request):
 def stop_crawling(request):
     crawl(0, stop_flag=True)
     return redirect('search_engine:crawler_settings')
+
+
+def analyze_search_words():
+    """
+    検索された単語を解析
+    """
+    pass
+
+
+def find_index():
+    """
+    検索にかけられた単語をもとにindexを返す
+    """
+    pass

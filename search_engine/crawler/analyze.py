@@ -56,7 +56,7 @@ def judge_japanese(line):
     return True if re.search(r'[ぁ-んァ-ン]', line) else False 
 
 
-def create_new_article(url, html, content):
+def create_new_article(index, url, html, content):
     """
     新しいurlを見つけたら、記事のタイトルと共にArticleモデルに保存
     """
@@ -85,7 +85,8 @@ def create_new_article(url, html, content):
           Article.objects.create(
               url = url,
               title = article_title,
-              content = content)
+              content = content,
+              index = index)
 
 
 def add_index_to_index_json(index_json, url, keyword):
@@ -160,9 +161,10 @@ def add_to_index(keyword, url, html, content):
         html: bs4.element.Tag
     """
     index = Index.objects.filter(keyword=keyword).first()
-    article = Article.objects.filter(url=url)
+    article = Article.objects.filter(url=url).first()
+    print(article)
     if not article:
-        create_new_article(url, html, content)
+        create_new_article(index, url, html, content)
     if index:
         print('index exists ==============================')
         index_json = index.index_json
@@ -172,13 +174,17 @@ def add_to_index(keyword, url, html, content):
                 new_index_json = add_index_to_index_json(index_json, url, keyword)
                 index.index_json = new_index_json
                 index.save()
+                article.index_keyword = index
+                article.save()
     else:
         print('index does not exist=================================')
         if keyword and not keyword.isspace():
             index_json = change_index_to_json(keyword, url)
-            Index.objects.create(
+            index = Index.objects.create(
                 keyword = keyword,
                 index_json = index_json)
+            article.index_keyword = index
+            article.save()
 
 
 def split_word(url, soup, text):
@@ -240,4 +246,4 @@ def analyze(page_content_dict):
         for page_url, page_content in page_content_dict.items():
             add_page_to_index(page_url, page_content)
             #解析したページをToAnalyzePageモデルから削除
-            ToAnalyzePage.objects.get(url=page_url).delete()
+            ToAnalyzePage.objects.filter(url=page_url).delete()
